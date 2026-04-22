@@ -1,0 +1,37 @@
+# B' = B_to_U + U-face CCW90 + U_to_B
+gripper_release()
+
+movel_abs(POS_INITIAL)
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, 90.0])
+movel_rel([0.0, 0.0, -40.0, 0.0, 0.0, 0.0])
+gripper_grap()
+gripper_grap()
+movel_rel([0.0, 0.0, 40.0, 0.0, 0.0, 0.0])
+movel_abs(POS_INITIAL)
+movel_abs(POS_L_DROP)
+gripper_release()
+gripper_release()
+
+movel_abs(POS_INITIAL)
+movel_rel([0.0, 0.0, -40.0, 0.0, 0.0, 0.0])
+gripper_grap()
+gripper_grap()
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, -90.0])
+gripper_release()
+gripper_release()
+movel_rel([0.0, 0.0, 40.0, 0.0, 0.0, 0.0])
+
+movel_abs(POS_INITIAL)
+
+movel_abs(POS_L_DROP)
+gripper_grap()
+gripper_grap()
+movel_rel([0.0, 0.0, 40.0, 0.0, 0.0, 0.0])
+movel_abs(POS_INITIAL)
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, 90.0])
+movel_rel([17.0, 0.0, -15.0, 0.0, 0.0, 0.0])
+movel_rel([0.0, 0.0, -10.0, 0.0, 0.0, 0.0])
+gripper_release()
+movel_abs(POS_INITIAL)
+
+flange_serial_close()

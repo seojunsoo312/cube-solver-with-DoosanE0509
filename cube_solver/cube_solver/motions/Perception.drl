@@ -1,0 +1,164 @@
+# perception.tw 변환본 (독립 실행형)
+# 주의: cube_motion_preamble.drl 의 변수/함수에 의존하지 않음.
+
+g_slaveid = 0
+
+# ---- 그리퍼/모션 파라미터 ----
+GRIP_RELEASE_STROKE = 0
+GRIP_GRAB_STROKE = 420
+GRIP_CURRENT = 400
+
+VEL_X = 250
+VEL_R = 76.5
+ACC_X = 500
+ACC_R = 306
+TIME_ML = 2.0
+
+VEL_J = 60
+ACC_J = 100
+TIME_MJ = 2.0
+
+# ---- 포즈 ----
+POS_INITIAL = [373.03, 0.0, 74.66, 22.85, -180.0, 22.85]
+POS_CAMERA_R_DROP = [373.03, 12.36, 48.53, 90.0, -90.0, 90.0]
+POS_CAMERA_L_DROP = [373.03, -12.96, 48.53, 90.0, 90.0, 90.0]
+
+
+def modbus_set_slaveid(slaveid):
+    global g_slaveid
+    g_slaveid = slaveid
+
+
+def modbus_fc06(address, value):
+    global g_slaveid
+    data = (g_slaveid).to_bytes(1, byteorder='big')
+    data += (6).to_bytes(1, byteorder='big')
+    data += (address).to_bytes(2, byteorder='big')
+    data += (value).to_bytes(2, byteorder='big')
+    return modbus_send_make(data)
+
+
+def modbus_fc16(startaddress, cnt, valuelist):
+    global g_slaveid
+    data = (g_slaveid).to_bytes(1, byteorder='big')
+    data += (16).to_bytes(1, byteorder='big')
+    data += (startaddress).to_bytes(2, byteorder='big')
+    data += (cnt).to_bytes(2, byteorder='big')
+    data += (2 * cnt).to_bytes(1, byteorder='big')
+    for i in range(0, cnt):
+        data += (valuelist[i]).to_bytes(2, byteorder='big')
+    return modbus_send_make(data)
+
+
+def recv_check():
+    size, val = flange_serial_read(0.1)
+    if size > 0:
+        tp_log(str(val))
+        return True, val
+    else:
+        tp_log("CRC Check Fail")
+        return False, val
+
+
+def gripper_move(stroke):
+    flange_serial_write(modbus_fc16(282, 2, [stroke, 0]))
+    wait(1.0)
+
+
+def gripper_release():
+    gripper_move(GRIP_RELEASE_STROKE)
+
+
+def gripper_grap():
+    gripper_move(GRIP_GRAB_STROKE)
+
+
+def movel_abs(p):
+    movel(p, vel=[VEL_X, VEL_R], acc=[ACC_X, ACC_R], t=TIME_ML,
+          ref=DR_BASE, mod=DR_MV_MOD_ABS)
+
+
+def movel_rel(p):
+    movel(p, vel=[VEL_X, VEL_R], acc=[ACC_X, ACC_R], t=TIME_ML,
+          ref=DR_BASE, mod=DR_MV_MOD_REL)
+
+
+def movej_rel(j):
+    movej(j, vel=VEL_J, acc=ACC_J, t=TIME_MJ, mod=DR_MV_MOD_REL)
+
+
+# ---- 시리얼/토크 초기화 ----
+while (True):
+    flange_serial_open(
+        baudrate=57600,
+        bytesize=DR_EIGHTBITS,
+        parity=DR_PARITY_NONE,
+        stopbits=DR_STOPBITS_ONE
+    )
+    modbus_set_slaveid(1)
+
+    flange_serial_write(modbus_fc06(256, 1))
+    flag, val = recv_check()
+
+    flange_serial_write(modbus_fc06(275, GRIP_CURRENT))
+    flag, val = recv_check()
+
+    if flag == True:
+        break
+
+    flange_serial_close()
+
+
+# ===== Capture phase 1 =====
+gripper_release()
+movel_abs(POS_INITIAL)
+movel_rel([0.0, 0.0, -30.0, 0.0, 0.0, 0.0])
+gripper_grap()
+movel_abs(POS_INITIAL)
+
+movel_rel([0.0, -293.33, 0.0, 0.0, 0.0, 0.0])
+movel_rel([0.0, 0.0, -57.78, 0.0, 0.0, 0.0])
+wait(1.0)
+
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, 90.0])
+wait(1.0)
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, 90.0])
+wait(1.0)
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, 90.0])
+wait(1.0)
+
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, -90.0])
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, -90.0])
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, -90.0])
+
+movel_rel([0.0, 0.0, 57.78, 0.0, 0.0, 0.0])
+movel_abs(POS_INITIAL)
+movel_abs(POS_CAMERA_R_DROP)
+gripper_release()
+
+
+# ===== Capture phase 2 =====
+movel_abs(POS_INITIAL)
+movel_rel([0.0, 0.0, -30.0, 0.0, 0.0, 0.0])
+gripper_grap()
+movel_abs(POS_INITIAL)
+
+movel_rel([0.0, -293.33, 0.0, 0.0, 0.0, 0.0])
+movel_rel([0.0, 0.0, -57.78, 0.0, 0.0, 0.0])
+wait(1.0)
+
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, 90.0])
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, 90.0])
+wait(1.0)
+
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, -90.0])
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, -90.0])
+
+movel_rel([0.0, 0.0, 57.78, 0.0, 0.0, 0.0])
+movel_abs(POS_INITIAL)
+movel_abs(POS_CAMERA_L_DROP)
+gripper_release()
+movel_abs(POS_INITIAL)
+
+flange_serial_close()
+

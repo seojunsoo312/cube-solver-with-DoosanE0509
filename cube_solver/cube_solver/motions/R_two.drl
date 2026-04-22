@@ -1,0 +1,33 @@
+# R2 = R_to_U + U-face 180 + U_to_R
+gripper_release()
+
+movel_abs(POS_INITIAL)
+movel_rel([0.0, 0.0, -40.0, 0.0, 0.0, 0.0])
+gripper_grap()
+gripper_grap()
+movel_abs(POS_INITIAL)
+movel_abs(POS_R_DROP)
+gripper_release()
+gripper_release()
+movel_abs(POS_INITIAL)
+
+movel_rel([0.0, 0.0, -40.0, 0.0, 0.0, 0.0])
+gripper_grap()
+gripper_grap()
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, 90.0])
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, 90.0])
+gripper_release()
+gripper_release()
+movel_rel([0.0, 0.0, 40.0, 0.0, 0.0, 0.0])
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, -90.0])
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, -90.0])
+
+movel_rel([0.0, 0.0, -40.0, 0.0, 0.0, 0.0])
+gripper_grap()
+gripper_grap()
+movel_abs(POS_INITIAL)
+movel_abs(POS_L_DROP)
+gripper_release()
+movel_abs(POS_INITIAL)
+
+flange_serial_close()

@@ -1,0 +1,113 @@
+# 공통 프리앰블 — motions/*.drl 본문 앞에 drl_block_runner가 자동 결합
+# rules: gripper_release=100, gripper_grab=420
+
+g_slaveid = 0
+flag = 0
+
+# ---- Tunable constants ----
+GRIP_RELEASE_STROKE = 100
+GRIP_GRAB_STROKE = 420
+GRIP_CURRENT = 400
+
+VEL_X = 30
+VEL_R = 30
+ACC_X = 20
+ACC_R = 20
+TIME_ML = 1.5
+
+VEL_J = 30
+ACC_J = 20
+TIME_MJ = 1.5
+
+# rules 좌표 (mm, deg)
+POS_INITIAL = [373.030, 0.000, 74.660, 22.85, -180.0, 22.85]
+POS_L_DROP = [373.030, 0.000, 48.530, 90.0, 90.0, 90.0]
+POS_R_DROP = [373.030, 0.000, 48.530, 90.0, -90.0, 90.0]
+POS_READY_D_LOW = [373.010, 0.000, 20.000, 22.85, -180.0, 22.85]
+POS_READY_D_UP = [373.020, 0.000, 27.730, 6.68, -180.0, 6.68]
+
+
+def modbus_set_slaveid(slaveid):
+    global g_slaveid
+    g_slaveid = slaveid
+
+
+def modbus_fc06(address, value):
+    global g_slaveid
+    data = (g_slaveid).to_bytes(1, byteorder='big')
+    data += (6).to_bytes(1, byteorder='big')
+    data += (address).to_bytes(2, byteorder='big')
+    data += (value).to_bytes(2, byteorder='big')
+    return modbus_send_make(data)
+
+
+def modbus_fc16(startaddress, cnt, valuelist):
+    global g_slaveid
+    data = (g_slaveid).to_bytes(1, byteorder='big')
+    data += (16).to_bytes(1, byteorder='big')
+    data += (startaddress).to_bytes(2, byteorder='big')
+    data += (cnt).to_bytes(2, byteorder='big')
+    data += (2 * cnt).to_bytes(1, byteorder='big')
+    for i in range(0, cnt):
+        data += (valuelist[i]).to_bytes(2, byteorder='big')
+    return modbus_send_make(data)
+
+
+def recv_check():
+    size, val = flange_serial_read(0.1)
+    if size > 0:
+        return True, val
+    else:
+        tp_log("CRC Check Fail")
+        return False, val
+
+
+def gripper_move(stroke):
+    flange_serial_write(modbus_fc16(282, 2, [stroke, 0]))
+    wait(1.0)
+
+
+def gripper_release():
+    gripper_move(GRIP_RELEASE_STROKE)
+
+
+def gripper_grap():
+    gripper_move(GRIP_GRAB_STROKE)
+
+
+def movel_abs(p):
+    movel(p, vel=[VEL_X, VEL_R], acc=[ACC_X, ACC_R], t=TIME_ML,
+          ref=DR_BASE, mod=DR_MV_MOD_ABS)
+
+
+def movel_rel(p):
+    movel(p, vel=[VEL_X, VEL_R], acc=[ACC_X, ACC_R], t=TIME_ML,
+          ref=DR_BASE, mod=DR_MV_MOD_REL)
+
+
+def movej_rel(j):
+    movej(j, vel=VEL_J, acc=ACC_J, t=TIME_MJ, mod=DR_MV_MOD_REL)
+
+
+# ---- 시리얼/토크 초기화 ----
+while (True):
+    flange_serial_open(
+        baudrate=57600,
+        bytesize=DR_EIGHTBITS,
+        parity=DR_PARITY_NONE,
+        stopbits=DR_STOPBITS_ONE
+    )
+    modbus_set_slaveid(1)
+
+    flange_serial_write(modbus_fc06(256, 1))
+    flag, val = recv_check()
+
+    flange_serial_write(modbus_fc06(275, GRIP_CURRENT))
+    flag, val = recv_check()
+
+    if flag == True:
+        break
+
+    flange_serial_close()
+
+# ---- 아래에 동작 본문(.drl)이 이어짐 ----

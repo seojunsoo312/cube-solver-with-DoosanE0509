@@ -1,0 +1,17 @@
+# U2 — top 180 (two 90 deg + base unwind)
+gripper_release()
+
+movel_abs(POS_INITIAL)
+movel_rel([0.0, 0.0, -40.0, 0.0, 0.0, 0.0])
+gripper_grap()
+gripper_grap()
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, 90.0])
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, 90.0])
+gripper_release()
+gripper_release()
+movel_rel([0.0, 0.0, 40.0, 0.0, 0.0, 0.0])
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, -90.0])
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, -90.0])
+movel_abs(POS_INITIAL)
+
+flange_serial_close()

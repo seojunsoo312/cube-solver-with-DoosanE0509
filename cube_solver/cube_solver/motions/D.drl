@@ -1,0 +1,17 @@
+# D = ready_D + D_cw90
+gripper_release()
+
+movel_abs(POS_INITIAL)
+movel_abs(POS_READY_D_LOW)
+gripper_grap()
+gripper_grap()
+movel_abs(POS_READY_D_UP)
+
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, 90.0])
+movel_rel([0.0, 0.0, 40.0, 0.0, 0.0, 0.0])
+movej_rel([0.0, 0.0, 0.0, 0.0, 0.0, -90.0])
+movel_rel([0.0, 0.0, -40.0, 0.0, 0.0, 0.0])
+gripper_release()
+movel_abs(POS_INITIAL)
+
+flange_serial_close()
